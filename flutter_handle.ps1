@@ -1,6 +1,7 @@
 
 
 flutter pub add flutter_blue_plus
+flutter pub add permission_handler
 
 
 
