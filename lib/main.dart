@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -24,14 +26,15 @@ class BluetoothPage extends StatefulWidget {
 }
 
 class _BluetoothPageState extends State<BluetoothPage> {
+ 
   Future<void> _requestPermission() async {
     await Permission.bluetoothScan.request();
     await Permission.bluetoothConnect.request();
     await Permission.location.request();
   }
 
-  Future<void> startScan() async {
-    var scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
+  Future<void> startScan(int scanSeconds) async {
+    final scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
         final result = results.last;
         print('${result.device.advName} : ${result.advertisementData}');
@@ -41,13 +44,13 @@ class _BluetoothPageState extends State<BluetoothPage> {
     FlutterBluePlus.cancelWhenScanComplete(scanSubscription);
     // await FlutterBluePlus.adapterState.where((val) => val == BluetoothAdapterState.on);
 
-    await FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
+    await FlutterBluePlus.startScan(timeout: Duration(seconds: scanSeconds));
   }
 
   @override
   void initState() {
-    startScan();
     _requestPermission();
+    startScan(10);
     super.initState();
   }
 
