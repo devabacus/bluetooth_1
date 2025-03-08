@@ -29,15 +29,14 @@ class _BluetoothPageState extends State<BluetoothPage> {
   Future<void> checkAvailability() async {
       if (await FlutterBluePlus.isSupported == false) {
         print('Устройство не поддерживается');
+      } else {
+        print('устройство поддерживается');
       }
     }
 
   @override
   void initState() {
-    print('начало приложения');
-
-   
-
+    checkAvailability();
     super.initState();
   }
 
