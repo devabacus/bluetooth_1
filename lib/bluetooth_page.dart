@@ -22,7 +22,7 @@ class _BluetoothPageState extends State<BluetoothPage> {
     final scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
         final result = results.first;
-        print('${result.device.advName} : ${result.advertisementData}');
+        // print('${result.device.advName} : ${result.advertisementData}');
       }
     }, onError: (e) => print(e));
 
@@ -30,6 +30,12 @@ class _BluetoothPageState extends State<BluetoothPage> {
     // await FlutterBluePlus.adapterState.where((val) => val == BluetoothAdapterState.on);
 
     await FlutterBluePlus.startScan(timeout: Duration(seconds: scanSeconds));
+  }
+
+  Future<void> deviceConnect(BluetoothDevice device) async {
+    await device.connect();
+    print('${device.advName} connected success');
+    print('${device.servicesList}');
   }
 
   @override
@@ -46,29 +52,32 @@ class _BluetoothPageState extends State<BluetoothPage> {
         child: StreamBuilder(
           stream: FlutterBluePlus.onScanResults,
           builder: (context, snapshot) {
-            List<Widget> deviceList =
-                snapshot.data!.map((result) {
-                  String deviceName = result.device.advName;
-                  if (deviceName.isEmpty) {
-                    deviceName = result.device.remoteId.str;
-                  }
-                  return ListTile(title: Text(deviceName));
-                }).toList();
 
-            return ListView(children: deviceList);
+            
 
-            // ListView.builder(
-            //   itemCount: snapshot.data!.length,
-            //   itemBuilder: (context, index) {
-            //     String deviceName = snapshot.data![index].device.advName;
 
-            //     if (deviceName.isEmpty) {
-            //       deviceName = snapshot.data![index].device.remoteId.str;
-            //     }
+            if (snapshot.hasError) {
+              return Text('ошибка ${snapshot.error}');
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Text('Устройства не найдены');
+            }
 
-            //     return ListTile(title: Text(deviceName));
-            //   },
-            // );
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                String deviceName = snapshot.data![index].device.advName;
+
+                if (deviceName.isEmpty) {
+                  deviceName = snapshot.data![index].device.remoteId.str;
+                }
+
+                return ListTile(
+                  title: Text(deviceName),
+                  onTap: () => deviceConnect(snapshot.data![index].device),
+                );
+              },
+            );
           },
         ),
       ),
