@@ -14,49 +14,39 @@ class _BluetoothPage2State extends State<BluetoothPage2> {
   final bleManager = BleManager(print);
   final List<BleScanResult> _scanResults = [];
   String deviceId = "";
-  
+
   StreamSubscription<List<BleScanResult>>? _scanSubscription;
   StreamSubscription<List<String>>? _serviceSubscription;
-  
-  
-// DA:20:24:1F:C3:01
-// 15a0737e-446b-4ae2-aa25-1057f8ac05c7
 
+  // DA:20:24:1F:C3:01
+  // 15a0737e-446b-4ae2-aa25-1057f8ac05c7
 
   @override
   void initState() {
-
-    _serviceSubscription = bleManager.serviceStream.listen((servicesUuid){
+    _serviceSubscription = bleManager.serviceStream.listen((servicesUuid) {
       print('$servicesUuid serviceUuid');
-      const nordicUartServiceUuid = '15a0737e-446b-4ae2-aa25-1057f8ac05c7';
+      // const nordicUartServiceUuid = '15a0737e-446b-4ae2-aa25-1057f8ac05c7';
+      const nordicUartServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 
       if (servicesUuid.contains(nordicUartServiceUuid)) {
-        final chars = bleManager.getCharacteristics(nordicUartServiceUuid);
-        // print('ivan');
-
-        print(chars);
-
+        final chars = bleManager.getCharacteristics(nordicUartServiceUuid).then(
+          (val) {
+            print('$val nordicuartchars');
+          },
+        );
       }
-      
     });
 
-
-    _scanSubscription = bleManager.scanResults.listen((results){
+    _scanSubscription = bleManager.scanResults.listen((results) {
       // print(results);
-      final _deviceId = results.first.deviceId;
-      if (_deviceId == 'DA:20:24:1F:C3:01') {
-        deviceId = _deviceId;
-        bleManager.bleConnect(deviceId);
+      if (results.isNotEmpty) {
+        final _deviceId = results.last.deviceId;
+        if (_deviceId == 'DA:20:24:1F:C3:01') {
+          deviceId = _deviceId;
+          bleManager.bleConnect(deviceId);
+        }
       }
-      
-
-
-
-
     });
-
-
-
 
     bleManager.startScan();
     super.initState();
