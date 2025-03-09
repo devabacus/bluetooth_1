@@ -1,4 +1,5 @@
 import 'package:bluetooth_1/bluetooth_page.dart';
+import 'package:bluetooth_1/bluetooth_page2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: BluetoothPage());
+    return MaterialApp(home: BluetoothPage2());
   }
 }
 

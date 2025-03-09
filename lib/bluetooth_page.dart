@@ -75,9 +75,11 @@ class _BluetoothPageState extends State<BluetoothPage> {
                       subtitle: Text(device.remoteId.str),
                       trailing: Text(rssi.toString()),
                       onTap: () {
-                      Navigator.of(
-                          context,
-                      ).push(MaterialPageRoute(builder: (context) => BleDeviceServices(device)));
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => BleDeviceServices(device),
+                          ),
+                        );
                       },
                     );
                   },
@@ -88,9 +90,9 @@ class _BluetoothPageState extends State<BluetoothPage> {
 }
 
 class BleDeviceServices extends StatefulWidget {
-  final BluetoothDevice _device;
+  final BluetoothDevice device;
 
-  const BleDeviceServices(this._device, {super.key});
+  const BleDeviceServices(this.device, {super.key});
 
   @override
   State<BleDeviceServices> createState() => _BleDeviceServicesState();
@@ -99,23 +101,131 @@ class BleDeviceServices extends StatefulWidget {
 class _BleDeviceServicesState extends State<BleDeviceServices> {
   List<BluetoothService> services = [];
 
+  bool isLoading = true;
+
   Future<void> getDeviceServices() async {
-    services = await widget._device.discoverServices();
+    if (widget.device.connectionState != BluetoothConnectionState.connected) {
+      await widget.device.connect();
+    }
+
+    await widget.device.connect();
+    final discoveredServices = await widget.device.discoverServices();
+    setState(() {
+      services = discoveredServices;
+      isLoading = false;
+    });
   }
 
   @override
   void initState() {
-    getDeviceServices();
     super.initState();
+    getDeviceServices();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: ListView.builder(
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        return ListTile(title: Text(services[index].serviceUuid.toString()));
-      },
-    ),);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Доступные устройства"),
+        backgroundColor: Colors.blue,
+        titleTextStyle: TextStyle(color: Colors.white),
+      ),
+      body:
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : services.isEmpty
+              ? Center(child: Text("Сервисы не найдены"))
+              : ListView.builder(
+                itemCount: services.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(services[index].serviceUuid.toString()),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => BleCharacteisticPage(
+                                services[index].characteristics,
+                              ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+    );
+  }
+}
+
+class BleCharacteisticPage extends StatefulWidget {
+  final List<BluetoothCharacteristic> bleCharacteristics;
+  const BleCharacteisticPage(this.bleCharacteristics, {super.key});
+
+  @override
+  State<BleCharacteisticPage> createState() => _BleCharacteisticPageState();
+}
+
+class _BleCharacteisticPageState extends State<BleCharacteisticPage> {
+
+    bool isNotifyActivated = false;    
+    String charValue = "";
+
+  Future<void> charSubscribe(BluetoothCharacteristic char) async {
+      final subscr = char.onValueReceived.listen((val) {
+        setState(() {
+          charValue = String.fromCharCodes(val);
+        });
+      });
+
+      await char.setNotifyValue(true);
+    }
+  
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Доступные устройства"),
+        backgroundColor: Colors.blue,
+        titleTextStyle: TextStyle(color: Colors.white),
+      ),
+      body: 
+      Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(charValue,style: TextStyle(fontSize: 30)),
+          SizedBox(height: 30,),
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.bleCharacteristics.length,
+              itemBuilder: (context, index) {
+                final charachter = widget.bleCharacteristics[index];
+                return ListTile(
+                  title: Text(
+                    charachter.characteristicUuid.toString(),
+                  ),
+                  subtitle: Text(charachter.properties.toString()),
+                  trailing: Text(charachter.isNotifying.toString()),
+                  onTap: () {
+            
+                    charSubscribe(charachter);
+                    if(!isNotifyActivated){
+                    isNotifyActivated = true;
+                    } else {
+                    isNotifyActivated = false;
+                    charachter.setNotifyValue(false);
+            
+                    }
+            
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,16 +1,39 @@
-# bluetooth_1
+```mermaid
+sequenceDiagram
+    box green before connect
+    participant a as App
+    participant s as BleManager
+    participant p as FlutterBluePlus
+    end
+    a ->> s : scanResults.listen
+    s ->> p : onScanResults.listen
+    p -->> s: scanResults [ScanResult]
+    s -->> a: scanResults [_BleScanResult]
 
-A new Flutter project.
+    a ->> s: bleConnect(deviceId)
+    s ->> p: bleConnect()
 
-## Getting Started
+    a ->> s : service.listen;
+    s->>p:discoverService()
 
-This project is a starting point for a Flutter application.
+    
+```
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```mermaid
+sequenceDiagram
+    box grey connected
+    participant a as App
+    participant s as BleManager
+    participant p as FlutterBluePlus
+    end
+    p-->>s:services
+    s -->> a: servicesUuid
+    a->>s:deviceId,serviceUuid
+    s->>p:discoverService()
+    p-->>s:services
+    s->>a:characteristics
+    
+    a->>s:? characterstic.subscribe
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
