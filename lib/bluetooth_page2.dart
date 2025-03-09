@@ -45,7 +45,8 @@ class _BluetoothPage2State extends State<BluetoothPage2> {
 
     bleManager.characteristicNotifications.listen((char) {
       if (char.uuid == rx) {
-        print("${char.value} Значение");
+        final stringValue = char.valueAsString;
+        print("${stringValue} Значение");
       }
     });
 
