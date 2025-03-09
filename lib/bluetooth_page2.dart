@@ -20,20 +20,32 @@ class _BluetoothPage2State extends State<BluetoothPage2> {
 
   // DA:20:24:1F:C3:01
   // 15a0737e-446b-4ae2-aa25-1057f8ac05c7
+  final nordicUartServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+  final rx = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+  final tx = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 
   @override
   void initState() {
     _serviceSubscription = bleManager.serviceStream.listen((servicesUuid) {
       print('$servicesUuid serviceUuid');
       // const nordicUartServiceUuid = '15a0737e-446b-4ae2-aa25-1057f8ac05c7';
-      const nordicUartServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 
       if (servicesUuid.contains(nordicUartServiceUuid)) {
         final chars = bleManager.getCharacteristics(nordicUartServiceUuid).then(
           (val) {
             print('$val nordicuartchars');
+            bleManager.subscribeToCharacteristic(
+              serviceUuid: nordicUartServiceUuid,
+              characteristicUuid: rx,
+            );
           },
         );
+      }
+    });
+
+    bleManager.characteristicNotifications.listen((char) {
+      if (char.uuid == rx) {
+        print("${char.value} Значение");
       }
     });
 
