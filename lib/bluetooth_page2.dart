@@ -29,8 +29,12 @@ class _BluetoothPage2State extends State<BluetoothPage2> {
     _serviceSubscription = bleManager.serviceStream.listen((servicesUuid){
       print('$servicesUuid serviceUuid');
       const nordicUartServiceUuid = '15a0737e-446b-4ae2-aa25-1057f8ac05c7';
+
       if (servicesUuid.contains(nordicUartServiceUuid)) {
-        bleManager.getCharacteristics(deviceId, nordicUartServiceUuid)  ;
+        final chars = bleManager.getCharacteristics(nordicUartServiceUuid);
+        // print('ivan');
+
+        print(chars);
 
       }
       

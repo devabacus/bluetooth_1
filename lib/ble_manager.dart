@@ -10,9 +10,24 @@ class BleScanResult {
   BleScanResult({required this.deviceId, required this.deviceName});
 }
 
+class BleCharacteristics {
+  final String uuid;
+  final List<String> properties;
+  final bool isNotifying;
+
+  BleCharacteristics({
+    required this.uuid,
+    required this.properties,
+    this.isNotifying = false,
+  });
+}
+
 class BleManager {
-  final Function(String val) log;
   BleManager(this.log);
+
+  final Function(String val) log;
+  BluetoothDevice? _connectedDevice;
+  Map<String, BluetoothService> discoveredServices = {};
 
   final StreamController<List<BleScanResult>> _scanResultsController =
       StreamController.broadcast();
@@ -55,39 +70,74 @@ class BleManager {
   }
 
   Future<void> bleConnect(String deviceId) async {
+    if (_connectedDevice?.remoteId.toString() == deviceId) {
+      log("Устройство уже подключено");
+      return;
+    }
+
     var device = BluetoothDevice.fromId(deviceId);
     await device.connect();
-    var services = await device.discoverServices();
-    _serviceController.add(
-      services.map((bleService) => bleService.uuid.toString()).toList(),
-    );
+    _connectedDevice = device;
+
+    await discoverServices();
+  }
+
+  Future<List<String>> discoverServices() async {
+    if (_connectedDevice == null) {
+      log("Устройство не подключено");
+      return [];
+    }
+
+    List<String> serviceUuids = [];
+
+    var services = await _connectedDevice!.discoverServices();
+    discoveredServices.clear();
+
+    for (var service in services) {
+      String uuid = service.uuid.toString();
+      discoveredServices[uuid] = service;
+      serviceUuids.add(uuid);
+    }
+    _serviceController.add(serviceUuids);
+    return serviceUuids;
   }
 
   void dispose() {
     _scanResultsController.close();
     _serviceController.close();
   }
+
+  Future<BluetoothService?> getService(
+    String deviceId,
+    String serviceUuid,
+  ) async {
+    final device = BluetoothDevice.fromId(deviceId);
+    var services = await device.discoverServices();
+    try {
+      return services.firstWhere(
+        (service) => service.uuid.toString() == serviceUuid,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<BleCharacteristics>?> getCharacteristics(String serviceUuid) async {
+    final service = discoveredServices[serviceUuid];
+    if (service == null) return null;
+
+    final characteristics = service.characteristics.map(
+      (char) => BleCharacteristics(
+        uuid: char.uuid.toString(),
+        properties: char.properties.toString().split(','),
+        isNotifying: char.isNotifying,
+      ),
+    ).toList();
+
+    return characteristics;
+  }
 }
 
 // Future<void> readCharateristics(String serviceUuid) async {
 //   // final service = BluetoothDevice.;
 // }
-
-Future<BluetoothService?> getService(String deviceId, String serviceUuid) async {
-  final device = BluetoothDevice.fromId(deviceId);
-  var services = await device.discoverServices();
-  try {
-    return services.firstWhere(
-      (service) => service.uuid.toString() == serviceUuid,
-    );
-  } catch (e) {
-    return null;
-  }
-}
-
-Future<List<String>?> getCharacteristics(String deviceId, String serviceUuid) async{
-  final service = await getService(deviceId, serviceUuid);
-  final charsUuid = service?.characteristics.map((char) => char.characteristicUuid.toString()).toList();
-
-  return charsUuid;
-}
